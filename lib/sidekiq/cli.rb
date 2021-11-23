@@ -172,11 +172,11 @@ module Sidekiq
       },
       "TTIN" => ->(cli) {
         Thread.list.each do |thread|
-          Sidekiq.logger.warn "Thread TID-#{(thread.object_id ^ ::Process.pid).to_s(36)} #{thread.name}"
+          Sidekiq.logger.info "Thread TID-#{(thread.object_id ^ ::Process.pid).to_s(36)} #{thread.name}"
           if thread.backtrace
-            Sidekiq.logger.warn thread.backtrace.join("\n")
+            Sidekiq.logger.info thread.backtrace.join("\n")
           else
-            Sidekiq.logger.warn "<no backtrace available>"
+            Sidekiq.logger.info "<no backtrace available>"
           end
         end
       }
