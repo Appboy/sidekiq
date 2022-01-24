@@ -53,14 +53,14 @@ module Sidekiq
 
     def fetch_stats!
       pipe1_res = Sidekiq.redis { |conn|
-        conn.pipelined do
-          conn.get("stat:processed")
-          conn.get("stat:failed")
-          conn.zcard("schedule")
-          conn.zcard("retry")
-          conn.zcard("dead")
-          conn.scard("processes")
-          conn.lrange("queue:default", -1, -1)
+        conn.pipelined do |pipeline|
+          pipeline.get("stat:processed")
+          pipeline.get("stat:failed")
+          pipeline.zcard("schedule")
+          pipeline.zcard("retry")
+          pipeline.zcard("dead")
+          pipeline.scard("processes")
+          pipeline.lrange("queue:default", -1, -1)
         end
       }
 
@@ -73,9 +73,9 @@ module Sidekiq
       }
 
       pipe2_res = Sidekiq.redis { |conn|
-        conn.pipelined do
-          processes.each { |key| conn.hget(key, "busy") }
-          queues.each { |queue| conn.llen("queue:#{queue}") }
+        conn.pipelined do |pipeline|
+          processes.each { |key| pipeline.hget(key, "busy") }
+          queues.each { |queue| pipeline.llen("queue:#{queue}") }
         end
       }
 
@@ -134,9 +134,9 @@ module Sidekiq
         Sidekiq.redis do |conn|
           queues = conn.sscan_each("queues").to_a
 
-          lengths = conn.pipelined {
+          lengths = conn.pipelined { |pipeline|
             queues.each do |queue|
-              conn.llen("queue:#{queue}")
+              pipeline.llen("queue:#{queue}")
             end
           }
 
@@ -272,9 +272,9 @@ module Sidekiq
 
     def clear
       Sidekiq.redis do |conn|
-        conn.multi do
-          conn.unlink(@rname)
-          conn.srem("queues", name)
+        conn.multi do |transaction|
+          transaction.unlink(@rname)
+          transaction.srem("queues", name)
         end
       end
     end
@@ -502,11 +502,11 @@ module Sidekiq
 
     def remove_job
       Sidekiq.redis do |conn|
-        results = conn.multi {
+        results = conn.multi { |transaction|
           # Don't let us fetch more than a few hundred elements from Redis as it could cause a bad incident
           # if the number of elements was massively large
-          conn.zrangebyscore(parent.name, score, score, limit: [0, 500])
-          conn.zremrangebyscore(parent.name, score, score)
+          transaction.zrangebyscore(parent.name, score, score, limit: [0, 500])
+          transaction.zremrangebyscore(parent.name, score, score)
         }.first
 
         if results.size == 1
@@ -527,9 +527,9 @@ module Sidekiq
           yield msg if msg
 
           # push the rest back onto the sorted set
-          conn.multi do
+          conn.multi do |transaction|
             nonmatched.each do |message|
-              conn.zadd(parent.name, score.to_f.to_s, message)
+              transaction.zadd(parent.name, score.to_f.to_s, message)
             end
           end
         end
@@ -718,10 +718,10 @@ module Sidekiq
     def kill(message, opts = {})
       now = Time.now.to_f
       Sidekiq.redis do |conn|
-        conn.multi do
-          conn.zadd(name, now.to_s, message)
-          conn.zremrangebyscore(name, "-inf", now - self.class.timeout)
-          conn.zremrangebyrank(name, 0, - self.class.max_jobs)
+        conn.multi do |transaction|
+          transaction.zadd(name, now.to_s, message)
+          transaction.zremrangebyscore(name, "-inf", now - self.class.timeout)
+          transaction.zremrangebyrank(name, 0, - self.class.max_jobs)
         end
       end
 
@@ -769,9 +769,9 @@ module Sidekiq
       count = 0
       Sidekiq.redis do |conn|
         procs = conn.sscan_each("processes").to_a.sort
-        heartbeats = conn.pipelined {
+        heartbeats = conn.pipelined { |pipeline|
           procs.each do |key|
-            conn.hget(key, "info")
+            pipeline.hget(key, "info")
           end
         }
 
@@ -793,9 +793,9 @@ module Sidekiq
         # We're making a tradeoff here between consuming more memory instead of
         # making more roundtrips to Redis, but if you have hundreds or thousands of workers,
         # you'll be happier this way
-        conn.pipelined do
+        conn.pipelined do |pipeline|
           procs.each do |key|
-            conn.hmget(key, "info", "busy", "beat", "quiet", "rss", "rtt_us")
+            pipeline.hmget(key, "info", "busy", "beat", "quiet", "rss", "rtt_us")
           end
         end
       }
@@ -905,9 +905,9 @@ module Sidekiq
     def signal(sig)
       key = "#{identity}-signals"
       Sidekiq.redis do |c|
-        c.multi do
-          c.lpush(key, sig)
-          c.expire(key, 60)
+        c.multi do |transaction|
+          transaction.lpush(key, sig)
+          transaction.expire(key, 60)
         end
       end
     end
@@ -941,9 +941,9 @@ module Sidekiq
       Sidekiq.redis do |conn|
         procs = conn.sscan_each("processes").to_a
         procs.sort.each do |key|
-          valid, workers = conn.pipelined {
-            conn.exists?(key)
-            conn.hgetall("#{key}:workers")
+          valid, workers = conn.pipelined { |pipeline|
+            pipeline.exists?(key)
+            pipeline.hgetall("#{key}:workers")
           }
           next unless valid
           workers.each_pair do |tid, json|
@@ -971,9 +971,9 @@ module Sidekiq
         if procs.empty?
           0
         else
-          conn.pipelined {
+          conn.pipelined { |pipeline|
             procs.each do |key|
-              conn.hget(key, "busy")
+              pipeline.hget(key, "busy")
             end
           }.sum(&:to_i)
         end
