@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "connection_pool"
+require "sidekiq/redis_connection_pool"
 require "redis"
 require "uri"
 
@@ -31,7 +31,9 @@ module Sidekiq
         pool_timeout = symbolized_options[:pool_timeout] || 1
         log_info(symbolized_options)
 
-        ConnectionPool.new(timeout: pool_timeout, size: size) do
+        # BRAZE MODIFIED CODE
+        # this swaps ConnectionPool for RedisConnectionPool and provides name/url as arguments
+        Sidekiq::RedisConnectionPool.new("sidekiq_shards", symbolized_options[:url], timeout: pool_timeout, size: size) do
           build_client(symbolized_options)
         end
       end
