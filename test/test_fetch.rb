@@ -33,7 +33,7 @@ describe Sidekiq::BasicFetch do
   it 'retrieves with strict setting' do
     fetch = Sidekiq::BasicFetch.new(:queues => ['basic', 'bar', 'bar'], :strict => true)
     cmd = fetch.queues_cmd
-    assert_equal cmd, ['queue:basic', 'queue:bar', Sidekiq::BasicFetch::TIMEOUT]
+    assert_equal cmd, ['queue:basic', 'queue:bar', {timeout: Sidekiq::BasicFetch::TIMEOUT}]
   end
 
   it 'bulk requeues' do

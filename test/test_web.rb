@@ -64,7 +64,7 @@ describe Sidekiq::Web do
     it 'can display workers' do
       Sidekiq.redis do |conn|
         conn.incr('busy')
-        conn.sadd('processes', 'foo:1234')
+        conn.sadd('processes', ['foo:1234'])
         conn.hmset('foo:1234', 'info', Sidekiq.dump_json('hostname' => 'foo', 'started_at' => Time.now.to_f, "queues" => []), 'at', Time.now.to_f, 'busy', 4)
         identity = 'foo:1234:workers'
         hash = {:queue => 'critical', :payload => { 'class' => WebWorker.name, 'args' => [1,'abc'] }, :run_at => Time.now.to_i }
@@ -154,7 +154,7 @@ describe Sidekiq::Web do
   it 'can delete a queue' do
     Sidekiq.redis do |conn|
       conn.rpush('queue:foo', "{\"args\":[],\"enqueued_at\":1567894960}")
-      conn.sadd('queues', 'foo')
+      conn.sadd('queues', ['foo'])
     end
 
     get '/queues/foo'
@@ -450,7 +450,7 @@ describe Sidekiq::Web do
     # on /workers page
     Sidekiq.redis do |conn|
       pro = 'foo:1234'
-      conn.sadd('processes', pro)
+      conn.sadd('processes', [pro])
       conn.hmset(pro, 'info', Sidekiq.dump_json('started_at' => Time.now.to_f, 'labels' => ['frumduz'], 'queues' =>[]), 'busy', 1, 'beat', Time.now.to_f)
       identity = "#{pro}:workers"
       hash = {:queue => 'critical', :payload => { 'class' => "FailWorker", 'args' => ["<a>hello</a>"] }, :run_at => Time.now.to_i }
@@ -530,7 +530,7 @@ describe Sidekiq::Web do
       Sidekiq.redis do |conn|
         conn.set("stat:processed", 5)
         conn.set("stat:failed", 2)
-        conn.sadd("queues", "default")
+        conn.sadd("queues", ["default"])
       end
       2.times { add_retry }
       3.times { add_scheduled }
@@ -585,8 +585,8 @@ describe Sidekiq::Web do
       Sidekiq.redis do |conn|
         conn.set("stat:processed", 5)
         conn.set("stat:failed", 2)
-        conn.sadd("queues", "default")
-        conn.sadd("queues", "queue2")
+        conn.sadd("queues", ["default"])
+        conn.sadd("queues", ["queue2"])
       end
       2.times { add_retry }
       3.times { add_scheduled }
@@ -731,7 +731,7 @@ describe Sidekiq::Web do
     msg = "{\"queue\":\"default\",\"payload\":{\"retry\":true,\"queue\":\"default\",\"timeout\":20,\"backtrace\":5,\"class\":\"HardWorker\",\"args\":[\"bob\",10,5],\"jid\":\"2b5ad2b016f5e063a1c62872\"},\"run_at\":1361208995}"
     Sidekiq.redis do |conn|
       conn.multi do |transaction|
-        transaction.sadd("processes", key)
+        transaction.sadd("processes", [key])
         transaction.hmset(key, 'info', Sidekiq.dump_json('hostname' => 'foo', 'started_at' => Time.now.to_f, "queues" => []), 'at', Time.now.to_f, 'busy', 4)
         transaction.hmset("#{key}:workers", Time.now.to_f, msg)
       end

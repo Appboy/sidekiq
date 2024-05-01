@@ -274,7 +274,7 @@ module Sidekiq
       Sidekiq.redis do |conn|
         conn.multi do |transaction|
           transaction.unlink(@rname)
-          transaction.srem("queues", name)
+          transaction.srem("queues", [name])
         end
       end
     end
