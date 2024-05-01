@@ -827,11 +827,11 @@ module Sidekiq
     # For Sidekiq Enterprise customers this number (in production) must be
     # less than or equal to your licensed concurrency.
     def total_concurrency
-      sum { |x| x["concurrency"] }
+      sum { |x| x["concurrency"].to_i }
     end
 
     def total_rss_in_kb
-      sum { |x| x["rss"] || 0 }
+      sum { |x| x["rss"].to_i }
     end
     alias_method :total_rss, :total_rss_in_kb
 
