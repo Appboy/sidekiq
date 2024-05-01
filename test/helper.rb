@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# enable minitest compatibility layer to avoid breaking lots of tests
+ENV["MT_COMPAT"] = "1"
+
 require 'bundler/setup'
 Bundler.require(:default, :test)
 

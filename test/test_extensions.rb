@@ -111,6 +111,6 @@ describe Sidekiq::Extensions do
   it 'allows Psych to serialize anonymous structs' do
     obj = Struct.new(:attribute).new(my: 'data')
 
-    assert_equal obj.attribute, Psych.load(Psych.dump(obj)).attribute
+    assert_equal obj.attribute, Psych.safe_load(Psych.dump(obj), permitted_classes: [Struct, Symbol]).attribute
   end
 end
