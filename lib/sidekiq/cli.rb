@@ -378,16 +378,16 @@ module Sidekiq
     end
 
     def write_pid
-      if path = options[:pidfile]
+      if (path = options[:pidfile])
         pidfile = File.expand_path(path)
-        File.open(pidfile, 'w') do |f|
+        File.open(pidfile, "w") do |f|
           f.puts ::Process.pid
         end
       end
     end
 
     def remove_pidfile
-      if path = options[:pidfile]
+      if (path = options[:pidfile])
         FileUtils.rm_f(path)
       end
     end
