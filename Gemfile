@@ -3,7 +3,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "rake"
-gem "redis-namespace", "1.8.1"
+gem "redis-namespace", "1.11.0"
 gem "rails", ">= 6.0.2"
 gem "sqlite3", "~> 1.7", platforms: :ruby
 gem "activerecord-jdbcsqlite3-adapter", platforms: :jruby

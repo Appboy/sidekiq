@@ -155,8 +155,8 @@ GEM
     rainbow (3.0.0)
     rake (13.2.1)
     redis (4.8.1)
-    redis-namespace (1.8.1)
-      redis (>= 3.0.4)
+    redis-namespace (1.11.0)
+      redis (>= 4)
     regexp_parser (2.1.1)
     rexml (3.2.4)
     rubocop (1.11.0)
@@ -204,7 +204,7 @@ DEPENDENCIES
   minitest
   rails (>= 6.0.2)
   rake
-  redis-namespace (= 1.8.1)
+  redis-namespace (= 1.11.0)
   sidekiq!
   simplecov
   sqlite3 (~> 1.7)
