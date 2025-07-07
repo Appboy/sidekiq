@@ -1,9 +1,0 @@
-ruby_version: 2.7.0
-fix: true
-parallel: true
-ignore:
-  - 'lib/sidekiq.rb':
-    - Lint/InheritException
-  - '**/*':
-    - Lint/RescueException
-    - Style/GlobalVars
